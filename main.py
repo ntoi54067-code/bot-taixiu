@@ -1,7 +1,20 @@
 import os
 import re
+import threading
+from flask import Flask
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
+
+# Tạo web server giả để Render Web Service không bị lỗi
+app_web = Flask(__name__)
+
+@app_web.route('/')
+def home():
+    return "Bot Tai Xiu is running!"
+
+def run_web():
+    port = int(os.environ.get("PORT", 10000))
+    app_web.run(host="0.0.0.0", port=port)
 
 TOKEN = "8759118827:AAGGfklUI72a5aRAZ-60pJW76QkFYeM2wuU"
 
@@ -100,6 +113,10 @@ async def reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("🔄 **Đã xóa toàn bộ bộ nhớ cũ!** Sẵn sàng nạp ca làm việc mới.")
 
 if __name__ == "__main__":
+    # Chạy Web Server ở luồng riêng
+    threading.Thread(target=run_web, daemon=True).start()
+    
+    # Chạy Bot Telegram
     app = ApplicationBuilder().token(TOKEN).build()
     app.add_handler(CommandHandler("reset", reset_command))
     app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
